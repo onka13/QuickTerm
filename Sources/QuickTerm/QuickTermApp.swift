@@ -27,12 +27,12 @@ struct QuickTermApp: App {
         }
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("Yeni Sekme") {
+                Button("New Tab") {
                     workspace.addTab()
                 }
                 .keyboardShortcut("t", modifiers: .command)
 
-                Button("Sekmeyi Kapat") {
+                Button("Close Tab") {
                     if let id = workspace.selectedTabID {
                         workspace.closeTab(id)
                     }
@@ -40,8 +40,8 @@ struct QuickTermApp: App {
                 .keyboardShortcut("w", modifiers: .command)
             }
 
-            CommandMenu("Görünüm") {
-                Button(showSidebar ? "Komut Menüsünü Gizle" : "Komut Menüsünü Göster") {
+            CommandMenu("View") {
+                Button(showSidebar ? "Hide Sidebar" : "Show Sidebar") {
                     withAnimation(.easeInOut(duration: 0.15)) {
                         showSidebar.toggle()
                     }
@@ -50,12 +50,12 @@ struct QuickTermApp: App {
 
                 Divider()
 
-                Button("Yazı Boyutunu Büyüt") {
+                Button("Increase Font Size") {
                     workspace.activeTab?.adjustFontSize(delta: 1)
                 }
                 .keyboardShortcut("+", modifiers: .command)
 
-                Button("Yazı Boyutunu Küçült") {
+                Button("Decrease Font Size") {
                     workspace.activeTab?.adjustFontSize(delta: -1)
                 }
                 .keyboardShortcut("-", modifiers: .command)

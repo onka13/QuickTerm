@@ -1,17 +1,17 @@
 # QuickTerm
 
-Basit ve hafif macOS terminali: üstte sekmeler, sol tarafta kayıtlı komutlar menüsü.
+A simple, lightweight macOS terminal with top tabs and a left-hand command bookmark sidebar.
 
-## Özellikler
-- **Üst Sekmeler:** `⌘T` ile yeni sekme açma, `⌘W` ile kapatma.
-- **Sol Komut Menüsü (`⌘B` ile aç/kapat):**
-  - `+` ile yeni komut ekleme (aktif terminal sekmesinin o anki klasörünü otomatik varsayılan alır).
-  - Komuta tıklayınca mevcut aktif sekmede çalıştırır.
-  - Düzenleme ve onaylı silme.
-  - Sürükleyerek sıralama ve arama.
-- **Yazı Boyutu:** `⌘+` / `⌘-` ile büyütüp küçültme.
+## Features
+- **Top Tabs:** Open tabs with `+`, `⌘T`, or double-clicking the empty tab bar area; close with `⌘W` or `×`.
+- **Command Sidebar (`⌘B` to toggle):**
+  - Click `+` to save a command (automatically prefills the active tab's current directory).
+  - Click a command row to edit or delete it (with confirmation).
+  - Click the play button on a row to execute it in the active tab.
+  - Drag to reorder, search when needed, and persisted divider width.
+- **Terminal:** Blinking underline cursor, `⌘+` / `⌘-` font size adjustment.
 
-## Derleme ve Çalıştırma
+## Build & Run
 ```bash
 ./scripts/build_app.sh
 open dist/QuickTerm.app

@@ -6,7 +6,6 @@ struct SidebarView: View {
     let onAddTapped: () -> Void
     let onEditTapped: (CommandBookmark) -> Void
 
-    @State private var bookmarkToDelete: CommandBookmark?
     @State private var searchText: String = ""
 
     private var filteredBookmarks: [CommandBookmark] {
@@ -23,7 +22,7 @@ struct SidebarView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("Komutlar")
+                Text("Commands")
                     .font(.headline)
                 Spacer()
                 Button(action: onAddTapped) {
@@ -31,7 +30,7 @@ struct SidebarView: View {
                         .font(.system(size: 13, weight: .semibold))
                 }
                 .buttonStyle(.borderless)
-                .help("Yeni komut ekle")
+                .help("Add command")
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
@@ -41,7 +40,7 @@ struct SidebarView: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
                         .font(.caption)
-                    TextField("Ara...", text: $searchText)
+                    TextField("Search...", text: $searchText)
                         .textFieldStyle(.plain)
                         .font(.subheadline)
                     if !searchText.isEmpty {
@@ -71,11 +70,11 @@ struct SidebarView: View {
                     Image(systemName: "terminal")
                         .font(.system(size: 24))
                         .foregroundStyle(.tertiary)
-                    Text(store.bookmarks.isEmpty ? "Henüz kayıtlı komut yok" : "Eşleşen komut yok")
+                    Text(store.bookmarks.isEmpty ? "No saved commands" : "No matching commands")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     if store.bookmarks.isEmpty {
-                        Button("Komut Ekle") {
+                        Button("Add Command") {
                             onAddTapped()
                         }
                         .buttonStyle(.borderedProminent)
@@ -91,8 +90,7 @@ struct SidebarView: View {
                         BookmarkRow(
                             bookmark: bookmark,
                             onRun: { onRunBookmark(bookmark) },
-                            onEdit: { onEditTapped(bookmark) },
-                            onDelete: { bookmarkToDelete = bookmark }
+                            onEdit: { onEditTapped(bookmark) }
                         )
                         .listRowInsets(EdgeInsets(top: 3, leading: 6, bottom: 3, trailing: 6))
                         .listRowSeparator(.hidden)
@@ -106,24 +104,6 @@ struct SidebarView: View {
                 .listStyle(.sidebar)
             }
         }
-        .alert(
-            "Komutu Sil",
-            isPresented: Binding(
-                get: { bookmarkToDelete != nil },
-                set: { if !$0 { bookmarkToDelete = nil } }
-            ),
-            presenting: bookmarkToDelete
-        ) { bookmark in
-            Button("İptal", role: .cancel) {
-                bookmarkToDelete = nil
-            }
-            Button("Sil", role: .destructive) {
-                store.delete(bookmark)
-                bookmarkToDelete = nil
-            }
-        } message: { bookmark in
-            Text("\"\(bookmark.name)\" komutunu silmek istediğine emin misin?")
-        }
     }
 }
 
@@ -131,9 +111,9 @@ private struct BookmarkRow: View {
     let bookmark: CommandBookmark
     let onRun: () -> Void
     let onEdit: () -> Void
-    let onDelete: () -> Void
 
     @State private var isHovering = false
+    @State private var isHoveringPlay = false
 
     private var folderName: String? {
         guard !bookmark.directory.isEmpty else { return nil }
@@ -163,27 +143,21 @@ private struct BookmarkRow: View {
                     .lineLimit(1)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onEdit()
+            }
 
-            Spacer(minLength: 4)
-
-            if isHovering {
-                HStack(spacing: 4) {
-                    Button(action: onEdit) {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Düzenle")
-
-                    Button(action: onDelete) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.red.opacity(0.8))
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Sil")
-                }
+            Button(action: onRun) {
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(isHoveringPlay ? Color.accentColor : Color.secondary.opacity(0.85))
+            }
+            .buttonStyle(.borderless)
+            .help("Run in active tab")
+            .onHover { hovering in
+                isHoveringPlay = hovering
             }
         }
         .padding(.horizontal, 8)
@@ -192,18 +166,12 @@ private struct BookmarkRow: View {
             RoundedRectangle(cornerRadius: 6)
                 .fill(isHovering ? Color.primary.opacity(0.07) : Color.clear)
         )
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onRun()
-        }
         .onHover { hovering in
             isHovering = hovering
         }
         .contextMenu {
-            Button("Çalıştır") { onRun() }
-            Divider()
-            Button("Düzenle") { onEdit() }
-            Button("Sil", role: .destructive) { onDelete() }
+            Button("Run") { onRun() }
+            Button("Edit") { onEdit() }
         }
     }
 }

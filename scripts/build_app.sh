@@ -22,7 +22,7 @@ cat > "$CONTENTS_DIR/Info.plist" << 'EOF'
 <plist version="1.0">
 <dict>
     <key>CFBundleDevelopmentRegion</key>
-    <string>tr</string>
+    <string>en</string>
     <key>CFBundleExecutable</key>
     <string>QuickTerm</string>
     <key>CFBundleIdentifier</key>

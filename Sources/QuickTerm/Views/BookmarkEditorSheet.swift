@@ -8,24 +8,36 @@ struct BookmarkEditorSheet: View {
 
         var title: String {
             switch self {
-            case .add: return "Yeni Komut Ekle"
-            case .edit: return "Komutu Düzenle"
+            case .add: return "New Command"
+            case .edit: return "Edit Command"
             }
+        }
+
+        var isEditing: Bool {
+            if case .edit = self { return true }
+            return false
         }
     }
 
     let mode: Mode
     let onSave: (_ name: String, _ directory: String, _ command: String) -> Void
+    let onDelete: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String = ""
     @State private var directory: String = ""
     @State private var command: String = ""
+    @State private var showDeleteConfirmation = false
 
-    init(mode: Mode, onSave: @escaping (_ name: String, _ directory: String, _ command: String) -> Void) {
+    init(
+        mode: Mode,
+        onSave: @escaping (_ name: String, _ directory: String, _ command: String) -> Void,
+        onDelete: (() -> Void)? = nil
+    ) {
         self.mode = mode
         self.onSave = onSave
+        self.onDelete = onDelete
 
         switch mode {
         case .add(let defaultDirectory):
@@ -50,44 +62,52 @@ struct BookmarkEditorSheet: View {
                 .font(.headline)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("İsim")
+                Text("Name")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                TextField("Örn: Backend Başlat", text: $name)
+                TextField("e.g. Start Backend", text: $name)
                     .textFieldStyle(.roundedBorder)
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Klasör (Opsiyonel)")
+                Text("Directory (Optional)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 HStack(spacing: 8) {
                     TextField("/Users/...", text: $directory)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.body, design: .monospaced))
-                    Button("Seç...") {
+                    Button("Choose...") {
                         pickDirectory()
                     }
                 }
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Komut")
+                Text("Command")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                TextField("Örn: npm run dev", text: $command)
+                TextField("e.g. npm run dev", text: $command)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.body, design: .monospaced))
             }
 
             HStack {
+                if mode.isEditing, onDelete != nil {
+                    Button("Delete", role: .destructive) {
+                        showDeleteConfirmation = true
+                    }
+                    .foregroundStyle(.red)
+                }
+
                 Spacer()
-                Button("İptal") {
+
+                Button("Cancel") {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
 
-                Button("Kaydet") {
+                Button("Save") {
                     onSave(name, directory, command)
                     dismiss()
                 }
@@ -98,6 +118,15 @@ struct BookmarkEditorSheet: View {
         }
         .padding(20)
         .frame(width: 440)
+        .alert("Delete Command", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                onDelete?()
+                dismiss()
+            }
+        } message: {
+            Text("Are you sure you want to delete \"\(name)\"?")
+        }
     }
 
     private func pickDirectory() {

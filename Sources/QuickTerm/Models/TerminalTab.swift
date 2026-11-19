@@ -23,6 +23,7 @@ final class TerminalTab: Identifiable, ObservableObject {
         tv.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
         tv.nativeBackgroundColor = NSColor(red: 0.10, green: 0.10, blue: 0.12, alpha: 1.0)
         tv.nativeForegroundColor = NSColor(red: 0.92, green: 0.93, blue: 0.95, alpha: 1.0)
+        tv.setCursorStyle(.blinkUnderline)
         self.terminalView = tv
 
         let adapter = TabProcessDelegate(tab: self)

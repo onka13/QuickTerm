@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 private enum ActiveEditorSheet: Identifiable {
     case add(defaultDirectory: String)
@@ -17,6 +18,7 @@ struct ContentView: View {
     @ObservedObject var bookmarkStore: BookmarkStore
     @Binding var showSidebar: Bool
 
+    @AppStorage("sidebarWidth") private var sidebarWidth: Double = 240
     @State private var editorSheet: ActiveEditorSheet?
 
     var body: some View {
@@ -28,7 +30,7 @@ struct ContentView: View {
 
             Divider()
 
-            HSplitView {
+            HStack(spacing: 0) {
                 if showSidebar {
                     SidebarView(
                         store: bookmarkStore,
@@ -44,7 +46,9 @@ struct ContentView: View {
                             editorSheet = .edit(bookmark)
                         }
                     )
-                    .frame(minWidth: 200, idealWidth: 240, maxWidth: 360)
+                    .frame(width: CGFloat(sidebarWidth))
+
+                    SidebarResizeDivider(sidebarWidth: $sidebarWidth)
                 }
 
                 TerminalHostView(
@@ -62,15 +66,59 @@ struct ContentView: View {
                     bookmarkStore.add(name: name, directory: dir, command: cmd)
                 }
             case .edit(let bookmark):
-                BookmarkEditorSheet(mode: .edit(bookmark)) { name, dir, cmd in
-                    var updated = bookmark
-                    updated.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-                    updated.directory = dir.trimmingCharacters(in: .whitespacesAndNewlines)
-                    updated.command = cmd.trimmingCharacters(in: .whitespacesAndNewlines)
-                    bookmarkStore.update(updated)
-                }
+                BookmarkEditorSheet(
+                    mode: .edit(bookmark),
+                    onSave: { name, dir, cmd in
+                        var updated = bookmark
+                        updated.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                        updated.directory = dir.trimmingCharacters(in: .whitespacesAndNewlines)
+                        updated.command = cmd.trimmingCharacters(in: .whitespacesAndNewlines)
+                        bookmarkStore.update(updated)
+                    },
+                    onDelete: {
+                        bookmarkStore.delete(bookmark)
+                    }
+                )
             }
         }
+    }
+}
+
+private struct SidebarResizeDivider: View {
+    @Binding var sidebarWidth: Double
+    @State private var dragStartWidth: Double?
+
+    var body: some View {
+        Rectangle()
+            .fill(Color(nsColor: .separatorColor))
+            .frame(width: 1)
+            .overlay(
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: 7)
+                    .contentShape(Rectangle())
+                    .onHover { hovering in
+                        if hovering {
+                            NSCursor.resizeLeftRight.push()
+                        } else {
+                            NSCursor.pop()
+                        }
+                    }
+                    .gesture(
+                        DragGesture(coordinateSpace: .global)
+                            .onChanged { value in
+                                if dragStartWidth == nil {
+                                    dragStartWidth = sidebarWidth
+                                }
+                                let base = dragStartWidth ?? sidebarWidth
+                                let next = base + value.translation.width
+                                sidebarWidth = min(max(next, 180), 460)
+                            }
+                            .onEnded { _ in
+                                dragStartWidth = nil
+                            }
+                    )
+            )
     }
 }
 
@@ -91,7 +139,7 @@ private struct TabBarView: View {
             }
             .buttonStyle(.borderless)
             .padding(.leading, 10)
-            .help("Komut menüsünü gizle/göster (⌘B)")
+            .help("Toggle Sidebar (⌘B)")
 
             Divider()
                 .frame(height: 16)
@@ -111,6 +159,14 @@ private struct TabBarView: View {
                 .padding(.vertical, 4)
             }
 
+            // Empty area in tab bar: double-click to open a new tab
+            Color.clear
+                .frame(minWidth: 20, maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .onTapGesture(count: 2) {
+                    workspace.addTab()
+                }
+
             Button {
                 workspace.addTab()
             } label: {
@@ -120,7 +176,7 @@ private struct TabBarView: View {
             }
             .buttonStyle(.borderless)
             .padding(.trailing, 8)
-            .help("Yeni sekme (⌘T)")
+            .help("New Tab (⌘T)")
         }
         .frame(height: 36)
         .background(Color(nsColor: .windowBackgroundColor))
@@ -145,6 +201,8 @@ private struct TabItemView: View {
                 .font(.system(size: 12, weight: isSelected ? .medium : .regular))
                 .lineLimit(1)
 
+            Spacer(minLength: 4)
+
             if isSelected || isHovering {
                 Button(action: onClose) {
                     Image(systemName: "xmark")
@@ -154,6 +212,7 @@ private struct TabItemView: View {
                 .buttonStyle(.borderless)
             }
         }
+        .frame(minWidth: 130, maxWidth: 220)
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
         .background(
